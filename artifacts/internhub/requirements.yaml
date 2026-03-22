@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "For page transitions, smooth progress bars, and hover animations"
+  "canvas-confetti": "To show celebration when the internship is fully completed"
+  "@types/canvas-confetti": "Type definitions for canvas-confetti"
+  "html2canvas": "For rendering the DOM certificate into an image for PDF export"
+  "jspdf": "For generating the downloadable PDF certificate"
+  "date-fns": "For formatting dates cleanly"
+
+images:
+  - path: "artifacts/internhub/public/images/hero-abstract.png"
+    description: "Abstract 3D geometric shapes (spheres, cubes, glass panels) floating in space with vibrant blue and cyan lighting, clean modern 3D render, light background"
+    aspect_ratio: "16:9"
+  - path: "artifacts/internhub/public/images/certificate-seal.png"
+    description: "A professional golden and blue premium metallic certificate seal badge with ribbons, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - "Authentication is strictly JWT-based via Authorization: Bearer header. The Orval generated hooks allow passing custom headers via the `request` property."
+  - "The app uses a light theme primarily, with dark mode toggleable."

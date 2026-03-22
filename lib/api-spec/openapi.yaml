@@ -1,0 +1,955 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: InternHub API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User operations
+  - name: tasks
+    description: Task operations
+  - name: certificate
+    description: Certificate operations
+  - name: internships
+    description: Public internship listing
+  - name: admin
+    description: Admin operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /internships:
+    get:
+      operationId: getPublicInternships
+      tags: [internships]
+      summary: List all active internship programs (public)
+      responses:
+        "200":
+          description: List of active internships
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicInternshipsResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: Get all tasks for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TasksResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tasks/{taskId}/complete:
+    post:
+      operationId: completeTask
+      tags: [tasks]
+      summary: Complete a task by submitting MCQ answers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteTaskRequest"
+      responses:
+        "200":
+          description: Task completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteTaskResponse"
+        "400":
+          description: Task not available, already completed, or wrong answers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /certificate:
+    get:
+      operationId: getCertificate
+      tags: [certificate]
+      summary: Get certificate for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Certificate data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CertificateResponse"
+        "403":
+          description: Certificate not yet earned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Admin endpoints ──────────────────────────────────────────────
+
+  /admin/internships:
+    get:
+      operationId: adminGetInternships
+      tags: [admin]
+      summary: List all internship templates
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of internship templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInternshipsResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: adminCreateInternship
+      tags: [admin]
+      summary: Create a new internship template
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateInternshipRequest"
+      responses:
+        "201":
+          description: Internship created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInternship"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/internships/{internshipId}:
+    get:
+      operationId: adminGetInternship
+      tags: [admin]
+      summary: Get an internship template with its task templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: internshipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Internship template detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInternshipDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: adminUpdateInternship
+      tags: [admin]
+      summary: Update an internship template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: internshipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateInternshipRequest"
+      responses:
+        "200":
+          description: Updated internship
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInternship"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteInternship
+      tags: [admin]
+      summary: Delete an internship template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: internshipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/internships/{internshipId}/tasks:
+    post:
+      operationId: adminCreateTaskTemplate
+      tags: [admin]
+      summary: Add a task template to an internship
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: internshipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateTaskTemplateRequest"
+      responses:
+        "201":
+          description: Task template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTaskTemplate"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/tasks/{taskTemplateId}:
+    put:
+      operationId: adminUpdateTaskTemplate
+      tags: [admin]
+      summary: Update a task template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskTemplateId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateTaskTemplateRequest"
+      responses:
+        "200":
+          description: Updated task template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTaskTemplate"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteTaskTemplate
+      tags: [admin]
+      summary: Delete a task template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskTemplateId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: List all users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    MCQQuestion:
+      type: object
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 2
+        correctIndex:
+          type: integer
+      required:
+        - question
+        - options
+        - correctIndex
+
+    PublicInternship:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        field:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        taskCount:
+          type: integer
+      required:
+        - id
+        - title
+        - field
+        - description
+        - taskCount
+
+    PublicInternshipsResponse:
+      type: object
+      properties:
+        internships:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicInternship"
+      required:
+        - internships
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        internshipId:
+          type: integer
+      required:
+        - name
+        - email
+        - password
+        - internshipId
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required:
+        - token
+        - user
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        internshipTitle:
+          type: string
+        internshipField:
+          type: string
+        progress:
+          type: number
+        tasksCompleted:
+          type: integer
+        totalTasks:
+          type: integer
+        certificateGenerated:
+          type: boolean
+        startDate:
+          type: string
+        isAdmin:
+          type: boolean
+      required:
+        - id
+        - name
+        - email
+        - internshipTitle
+        - internshipField
+        - progress
+        - tasksCompleted
+        - totalTasks
+        - certificateGenerated
+        - startDate
+        - isAdmin
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        dayNumber:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        videoType:
+          type: string
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCQQuestion"
+          nullable: true
+        status:
+          type: string
+          enum: [locked, pending, completed]
+        submittedCode:
+          type: string
+          nullable: true
+        completedAt:
+          type: string
+          nullable: true
+      required:
+        - id
+        - dayNumber
+        - title
+        - description
+        - instructions
+        - status
+
+    TasksResponse:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        internshipTitle:
+          type: string
+        progress:
+          type: number
+      required:
+        - tasks
+        - internshipTitle
+        - progress
+
+    CompleteTaskRequest:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: integer
+          description: Array of selected answer indices (one per question)
+        submittedCode:
+          type: string
+      required:
+        - answers
+
+    CompleteTaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        progress:
+          type: number
+        tasksCompleted:
+          type: integer
+        totalTasks:
+          type: integer
+        certificateGenerated:
+          type: boolean
+        message:
+          type: string
+        wrongAnswers:
+          type: array
+          items:
+            type: integer
+          description: Indices of questions answered incorrectly (empty if all correct)
+      required:
+        - success
+        - progress
+        - tasksCompleted
+        - totalTasks
+        - certificateGenerated
+        - message
+
+    CertificateResponse:
+      type: object
+      properties:
+        userName:
+          type: string
+        internshipTitle:
+          type: string
+        internshipField:
+          type: string
+        completionDate:
+          type: string
+        certificateId:
+          type: string
+        totalDays:
+          type: integer
+      required:
+        - userName
+        - internshipTitle
+        - internshipField
+        - completionDate
+        - certificateId
+        - totalDays
+
+    AdminTaskTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+        internshipTemplateId:
+          type: integer
+        dayNumber:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        videoType:
+          type: string
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCQQuestion"
+          nullable: true
+      required:
+        - id
+        - internshipTemplateId
+        - dayNumber
+        - title
+        - description
+        - instructions
+
+    AdminInternship:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        field:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        taskCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - field
+        - description
+        - isActive
+        - taskCount
+        - createdAt
+
+    AdminInternshipDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        field:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminTaskTemplate"
+      required:
+        - id
+        - title
+        - field
+        - description
+        - isActive
+        - createdAt
+        - tasks
+
+    AdminInternshipsResponse:
+      type: object
+      properties:
+        internships:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminInternship"
+      required:
+        - internships
+
+    AdminCreateInternshipRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 2
+        field:
+          type: string
+          minLength: 2
+        description:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+      required:
+        - title
+        - field
+        - description
+
+    AdminCreateTaskTemplateRequest:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+        title:
+          type: string
+          minLength: 2
+        description:
+          type: string
+          minLength: 2
+        instructions:
+          type: string
+          minLength: 2
+        videoUrl:
+          type: string
+          nullable: true
+        videoType:
+          type: string
+          nullable: true
+          enum: [youtube, mp4, mp3]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCQQuestion"
+          nullable: true
+      required:
+        - dayNumber
+        - title
+        - description
+        - instructions
+
+    AdminUserItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        internshipTitle:
+          type: string
+        internshipField:
+          type: string
+        progress:
+          type: number
+        tasksCompleted:
+          type: integer
+        totalTasks:
+          type: integer
+        startDate:
+          type: string
+        certificateGenerated:
+          type: boolean
+      required:
+        - id
+        - name
+        - email
+        - internshipTitle
+        - internshipField
+        - progress
+        - tasksCompleted
+        - totalTasks
+        - startDate
+        - certificateGenerated
+
+    AdminUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserItem"
+      required:
+        - users

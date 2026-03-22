@@ -1,0 +1,3 @@
+[build]
+  command = "pnpm --filter @workspace/internhub... run build"
+  publish = "artifacts/internhub/dist"
