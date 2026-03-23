@@ -2,11 +2,22 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "workspaces": [
+    "artifacts/api-server",
+    "artifacts/internhub",
+    "lib/api-client-react",
+    "lib/api-spec",
+    "lib/api-zod",
+    "lib/db",
+    "scripts"
+  ],
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "dev": "bash -lc 'npm run dev:server & npm run dev:client & wait'",
+    "dev:server": "npm run dev -w @workspace/api-server",
+    "dev:client": "npm run dev -w @workspace/internhub",
+    "build": "npm run build -w @workspace/api-server && npm run build -w @workspace/internhub",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "npm run typecheck:libs && npm run typecheck -w @workspace/api-server && npm run typecheck -w @workspace/internhub"
   },
   "private": true,
   "devDependencies": {
